@@ -50,16 +50,6 @@ Datele folosite sunt o transcriere verificabilă a coloanei `YIELD, MEASURED IN 
 - Repository upstream CropNet: <https://github.com/fudonglin/CropNet>
 - Articol original: Lin et al., *An Open and Large-Scale Dataset for Multi-Modal Climate Change-aware Crop Yield Predictions*, KDD 2024, <https://arxiv.org/abs/2406.06081>
 
-**Notă despre licență:** verifică termenii licenței la sursă înainte de redistribuirea datelor. Nu confunda repository-ul upstream al autorilor cu repository-ul *tău* pentru CP2.
 
-## Ce trebuie făcut pentru predare
 
-1. Creează un repository GitHub, de exemplu `ic3-a3-cp2`, și încarcă `run_cp2.py`, `data/`, `outputs/`, `requirements.txt`, `README.md`.
-2. În PowerPointul CP2, la slide-ul 2, înlocuiește **`REPO: [ADAUGA LINKUL TAU]`** cu linkul efectiv GitHub (nu doar cu GitHub CropNet al autorilor).
-3. Exportă din PowerPoint varianta actualizată în PDF și încarc-o pe Moodle înainte de termenul-limită.
 
-## Plan CP3
-
-- Aliniere FIPS × an pentru setul pilot cu weather WRF-HRRR + NDVI Sentinel-2, **până la 31 august** în fiecare an.
-- Audit de lipsuri S2/HRRR pe fiecare comitat-an; imputare numai din train.
-- Repetarea evaluării 2022 cu `RF(weather)` versus `RF(weather+NDVI)` și baselines istorice, apoi extindere la protocolul LOYO/rolling temporal fără leakage.
