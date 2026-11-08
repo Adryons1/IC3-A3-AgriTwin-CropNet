@@ -1,55 +1,82 @@
-# IC3 / A3 / CP2 — AgriTwin: randament porumb, Iowa
+# A3 — AgriTwin
+### Estimarea randamentului porumbului în Iowa
 
-**Autor:** Dumitru Florin-Adrian  
-**Tema:** A3 — Comitat agricol (CropNet): randament, leave-one-year-out  
-**Checkpoint:** CP2 — Reprezentare, baseline și protocol
+**Inteligență Computațională III · Master SIVA · Checkpoint 2**  
+**Dumitru Florin-Adrian**
 
-## Ce este deja rulat
+## Despre proiect
 
-Primul experiment **pe randamente USDA reale** din CropNet: 30 de comitate din Iowa × 6 ani (2017–2022), 180 de înregistrări `comitat × an`. Am extras un pilot fix cu 30 de comitate care au toate cele 6 etichete și am păstrat anul **2022 separat pentru test**.
+Proiectul urmărește estimarea randamentului porumbului la nivel de comitat (*county*) în statul Iowa, SUA. Ideea este de a obține o estimare utilă pentru planificarea veniturilor agricole înainte de recoltare, folosind datele disponibile din anii anteriori și, în etapele următoare, informații meteorologice și satelitare.
 
-### Reprezentări de comparat
+Pentru acest checkpoint am pornit de la un experiment mai simplu, bazat pe istoricul randamentului. Scopul a fost să stabilesc o referință de comparație (*baseline*) și un protocol de evaluare pe care să le pot folosi ulterior pentru modelele multimodale.
 
-- **A (reprezentare aleasă pentru baseline-ul CP2):** vector numeric de istoric al randamentului `[lag1, lag2, media anilor anteriori, abaterea standard istorică, media ultimilor 3 ani, diferența dintre ultimii 2 ani]`. Unitatea: `comitat × an`, randament în `BU/AC`.
-- **B (alternativă simplă):** un singur număr pe comitat: **media randamentelor din anii anteriori** (climatologie locală). Pentru control mai raportăm **persistența**: valoarea randamentului din anul precedent.
+## Date utilizate
 
-Modelul cu reprezentarea A este `RandomForestRegressor`, seed=42, 300 de arbori, `max_depth=5`, `min_samples_leaf=3`. Este antrenat pe exemple țintă 2019–2021, deoarece din 2019 există cel puțin 2 ani anteriori pentru a calcula toate trăsăturile. Metodele baseline nu necesită antrenare. Evaluarea finală este pe **30 de comitate din 2022**, fără să folosim randamentul din 2022 la construirea predictorilor.
+Am folosit înregistrările USDA incluse în setul de date [CropNet](https://huggingface.co/datasets/CropNet/CropNet), pentru cultura porumbului:
 
-**Important:** acest CP2 este în prezent un **baseline USDA bazat exclusiv pe istoricul randamentului**, nu predicția multimodală finală. **Nu au fost procesate Sentinel-2 sau WRF-HRRR**. Restricția „date până la 31 august” va trebui verificată explicit când adăugăm sursele satelitare/meteo. Nu afirmăm că proiectul complet produce deja predicții din vreme și satelit.
+- **Regiune:** Iowa, SUA
+- **Perioadă:** 2017–2022
+- **Eșantion:** 30 de comitate cu înregistrări complete în cei șase ani
+- **Unitate de analiză:** comitat × an (180 de înregistrări)
+- **Variabilă prezisă:** randamentul anual al porumbului, în bushels/acru (BU/AC)
 
-## Protocol și limitări
+Subsetul folosit în experiment se găsește în `data/usda_corn_iowa_pilot30_2017_2022.csv`.
 
-- **Split temporal:** istoricul 2017–2021 pentru testarea anului 2022. Random Forest primește exemple țintă din 2019–2021; 2022 rămâne complet neobservat ca țintă în antrenare. Acesta este **un singur fold temporal**, **nu LOYO complet**. Un experiment LOYO cu fiecare an separat se face după validarea datelor multimodale, cu atenție la posibila folosire a valorilor din viitor.
-- Datele de antrenare nu conțin caracteristici calculate din anul-țintă sau din ani ulteriori acestuia.
-- **Metrici:** MAE și RMSE în `BU/AC`. Unitățile sunt aceleași ca pentru ținta USDA.
-- **Limite:** doar 30 de comitate alese pentru continuitatea seriilor; selecția nu este aleatoare/reprezentativă; perioada scurtă și lipsa datelor satelitare/meteo limitează generalizarea și prognoza sezonieră.
+## Metodă și protocol experimental
 
-## Reproducere
+Am comparat două moduri de reprezentare a istoricului: o reprezentare numerică formată din șase caracteristici (randamentele din ultimii doi ani, media și abaterea standard istorice, media ultimilor trei ani și variația dintre ultimii doi ani) și o reprezentare simplă, bazată pe media istorică a fiecărui comitat.
 
-În terminal, în folderul proiectului:
+Au fost evaluate trei metode:
+
+1. **Media istorică locală** — predicția este media randamentelor din anii precedenți.
+2. **Persistența** — predicția este randamentul înregistrat în anul precedent.
+3. **Random Forest Regressor** — model antrenat pe cele șase caracteristici istorice.
+
+Pentru test am separat complet **anul 2022**. Modelul Random Forest este antrenat pe observațiile pentru anii-țintă 2019–2021 (90 de exemple), folosind doar informații din anii anteriori fiecărei predicții. Cele 30 de observații din 2022 sunt folosite exclusiv pentru evaluare.
+
+Random Forest utilizează 300 de arbori, adâncime maximă 5, `min_samples_leaf=3` și `random_state=42`. Performanța este măsurată prin **MAE** și **RMSE**, ambele în BU/AC.
+
+Aceasta este o evaluare temporală cu 2022 ca an de test, nu încă o evaluare *leave-one-year-out* completă.
+
+## Rezultate CP2
+
+| Metodă | MAE (BU/AC) | RMSE (BU/AC) |
+|:--|--:|--:|
+| **Media istorică locală** | **11,47** | **14,01** |
+| Persistență | 13,22 | 15,94 |
+| Random Forest | 31,04 | 33,56 |
+
+![Comparația erorilor obținute pe anul 2022](outputs/comparison_2022.png)
+
+În acest experiment, media istorică a avut cele mai mici erori. Random Forest nu a îmbunătățit rezultatul pe anul 2022, ceea ce arată că un model mai complex nu este neapărat mai potrivit pentru un eșantion mic și o reprezentare limitată la istoricul randamentelor. Rezultatul reprezintă un punct de plecare pentru comparațiile următoare, nu o concluzie despre performanța Random Forest pe datele CropNet complete.
+
+## Rularea experimentului
+
+Proiectul folosește Python, pandas, NumPy, scikit-learn și Matplotlib. Din directorul repository-ului:
 
 ```bash
 python -m pip install -r requirements.txt
 python run_cp2.py
 ```
 
-Dacă execuția reușește, `outputs/` conține:
+Scriptul citește datele din `data/`, construiește caracteristicile, antrenează modelul și salvează rezultatele în `outputs/`:
 
-- `metrics_2022.csv` — MAE/RMSE pentru 3 metode
-- `predictions_2022.csv` — valorile reale și cele prezise, per comitat
-- `feature_matrix_2019_2022.csv` — descriptori strict din anii anteriori
-- `comparison_2022.png` — graficul din slide-ul 2
-- `protocol.json` — parametrii de reproducere
+| Fișier | Conținut |
+|:--|:--|
+| `metrics_2022.csv` | MAE și RMSE pentru cele trei metode |
+| `predictions_2022.csv` | Valorile reale și predicțiile pentru fiecare comitat |
+| `feature_matrix_2019_2022.csv` | Caracteristicile istorice calculate |
+| `comparison_2022.png` | Graficul comparativ al erorilor |
+| `protocol.json` | Parametrii experimentului |
 
-## Proveniența datelor
+## Limite și continuarea proiectului
 
-Datele folosite sunt o transcriere verificabilă a coloanei `YIELD, MEASURED IN BU / ACRE` din cele 6 fișiere anuale CropNet pentru cultura `Corn`, comitate din Iowa (`state_ansi = 19`). Identificatorii comitatelor sunt `19` + codul din 3 cifre al comitatului. Am păstrat numele, FIPS, anul și randamentul. Nu sunt generate sintetic.
+Experimentul CP2 folosește **doar istoricul randamentelor USDA**. Datele Sentinel-2 și WRF-HRRR nu sunt încă incluse, astfel că rezultatele nu reprezintă o prognoză în timpul sezonului de vegetație. În plus, pilotul cu 30 de comitate este restrâns, iar evaluarea acoperă un singur an de test.
 
-- Dataset: <https://huggingface.co/datasets/CropNet/CropNet>
-- Folder sursă: <https://huggingface.co/datasets/CropNet/CropNet/tree/main/USDA%20Crop%20Dataset/Corn>
-- Repository upstream CropNet: <https://github.com/fudonglin/CropNet>
-- Articol original: Lin et al., *An Open and Large-Scale Dataset for Multi-Modal Climate Change-aware Crop Yield Predictions*, KDD 2024, <https://arxiv.org/abs/2406.06081>
+În etapa următoare voi verifica disponibilitatea și alinierea datelor satelitare și meteorologice pe comitat și an. Pentru predicțiile din timpul sezonului voi păstra doar observațiile disponibile până la **31 august**. Ulterior, voi compara modelele bazate pe vreme și satelit cu baseline-urile de aici și voi extinde evaluarea temporală.
 
+## Referințe
 
-
-
+- [CropNet — dataset](https://huggingface.co/datasets/CropNet/CropNet)
+- [CropNet — repository-ul autorilor](https://github.com/fudonglin/CropNet)
+- Lin et al. (2024), *An Open and Large-Scale Dataset for Multi-Modal Climate Change-aware Crop Yield Predictions*, KDD. [Articol](https://arxiv.org/abs/2406.06081)
