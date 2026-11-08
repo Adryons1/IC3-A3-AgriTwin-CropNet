@@ -1,0 +1,4 @@
+model,MAE_BU_AC,RMSE_BU_AC,n_test,test_year
+Climatologie locala (media 2017-2021),11.471,14.012,30,2022
+Persistenta (randament 2021),13.22,15.937,30,2022
+Random Forest (istoric USDA),31.036,33.558,30,2022

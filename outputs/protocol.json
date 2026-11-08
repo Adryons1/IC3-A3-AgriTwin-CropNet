@@ -1,0 +1,36 @@
+{
+  "project": "IC3-A3-CP2",
+  "crop": "corn",
+  "geography": "Iowa, 30 explicitly enumerated counties",
+  "target": "USDA annual corn yield in bushels/acre (BU/AC)",
+  "unit": "county-year",
+  "source": "CropNet USDA Corn County CSV (2017-2022)",
+  "holdout_year": 2022,
+  "base_history_years": [
+    2017,
+    2018,
+    2019,
+    2020,
+    2021
+  ],
+  "random_forest_training_years": [
+    2019,
+    2020,
+    2021
+  ],
+  "n_train_rf": 90,
+  "n_test": 30,
+  "seed": 42,
+  "features": [
+    "lag1",
+    "lag2",
+    "history_mean",
+    "history_std",
+    "last3_mean",
+    "yearly_change"
+  ],
+  "no_target_leakage": "All features for a target year use yields strictly before that year",
+  "multimodal_status": "Sentinel-2 and WRF-HRRR NOT downloaded / included; August 31 restriction to be enforced when added",
+  "protocol_note": "Temporal holdout 2022; this is one year-fold, not a complete LOYO.",
+  "limitations": "Nonrandom 30-county pilot, no same-season predictors; no in-season forecasting claim."
+}
